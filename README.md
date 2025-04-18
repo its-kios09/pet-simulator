@@ -41,3 +41,8 @@ cd pet-simulator
 
 # Install dependencies
 pip install -r requirements.txt
+```
+
+### 🎬 Demo
+
+![project](https://github.com/user-attachments/assets/d28d7960-cfc9-44ef-ae94-264feb3509c8)
