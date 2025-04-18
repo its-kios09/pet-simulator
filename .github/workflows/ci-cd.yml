@@ -17,15 +17,8 @@ jobs:
         python-version: '3.10'
     - name: Install Black
       run: pip install black
-    - name: Format with Black
+    - name: Run Black formatting
       run: black app/
-    - name: Commit formatted changes
-      run: |
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
-        git add .
-        git diff --quiet && git diff --staged --quiet || git commit -m "Format code with Black"
-        git push
 
   test:
     needs: format
@@ -38,11 +31,18 @@ jobs:
         python-version: '3.10'
     - name: Install dependencies
       run: |
+        python -m pip install --upgrade pip
         pip install -r requirements.txt pytest pytest-cov
-    - name: Run tests
-      run: pytest app/tests/ --cov=app --cov-report=xml
-    - name: Upload coverage
+    - name: Run tests with coverage
+      run: |
+        pytest app/tests/ --cov=app --cov-report=xml
+    - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage.xml
+        flags: unittests
+        verbose: true
 
   lint:
     needs: format
@@ -54,7 +54,9 @@ jobs:
       with:
         python-version: '3.10'
     - name: Install linters
-      run: pip install black flake8
+      run: |
+        python -m pip install --upgrade pip
+        pip install black flake8
     - name: Run Black check
       run: black --check app/
     - name: Run Flake8
@@ -71,9 +73,12 @@ jobs:
         with:
           python-version: '3.10'
       - name: Install dependencies
-        run: pip install -r requirements.txt pyinstaller
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
       - name: Create executable
-        run: pyinstaller --onefile app/pet_simulator.py -n pet_simulator
+        run: |
+          pyinstaller --onefile app/pet_simulator.py -n pet_simulator
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
