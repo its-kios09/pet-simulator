@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ "main" ]
 
+env:
+  PYTHON_VERSION: '3.10'
+  MAX_LINE_LENGTH: 200
+
 jobs:
   format:
     runs-on: ubuntu-latest
@@ -14,11 +18,18 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: ${{ env.PYTHON_VERSION }}
     - name: Install Black
       run: pip install black
     - name: Run Black formatting
-      run: black app/
+      run: black app/ --line-length ${{ env.MAX_LINE_LENGTH }}
+    - name: Commit formatted changes
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git add .
+        git diff --quiet && git diff --staged --quiet || git commit -m "Format code with Black"
+        git push
 
   test:
     needs: format
@@ -28,7 +39,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: ${{ env.PYTHON_VERSION }}
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -52,15 +63,15 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: ${{ env.PYTHON_VERSION }}
     - name: Install linters
       run: |
         python -m pip install --upgrade pip
         pip install black flake8
     - name: Run Black check
-      run: black --check app/
+      run: black --check app/ --line-length ${{ env.MAX_LINE_LENGTH }}
     - name: Run Flake8
-      run: flake8 app/ --max-line-length=200
+      run: flake8 app/ --max-line-length=${{ env.MAX_LINE_LENGTH }}
 
   release:
     needs: [test, lint]
@@ -71,7 +82,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: ${{ env.PYTHON_VERSION }}
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
