@@ -212,7 +212,10 @@ def test_random_event(new_pet, monkeypatch):
 
     event = new_pet.random_event()
     assert event is not None
-    assert any(phrase in event for phrase in ["found a toy", "bad dream", "exploring", "learned something"])
+    assert any(
+        phrase in event
+        for phrase in ["found a toy", "bad dream", "exploring", "learned something"]
+    )
 
 
 def test_learn_random_trick(new_pet, monkeypatch):
