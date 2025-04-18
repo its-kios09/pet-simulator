@@ -26,14 +26,10 @@ class Pet:
 
     def _update_stats(self):
         """Internal method to decay stats over time"""
-        time_passed = random.uniform(
-            0.8, 1.2
-        )  # Random factor to make it less predictable
+        time_passed = random.uniform(0.8, 1.2)  # Random factor to make it less predictable
 
         self.energy = max(0, self.energy - self.energy_decay_rate * time_passed)
-        self.happiness = max(
-            0, self.happiness - self.happiness_decay_rate * time_passed
-        )
+        self.happiness = max(0, self.happiness - self.happiness_decay_rate * time_passed)
         self.hunger = min(10, self.hunger + self.hunger_growth_rate * time_passed)
 
         # Update mood based on stats
@@ -109,10 +105,7 @@ class Pet:
             "default": f"You play with {self.name}!",
         }
 
-        return (
-            games.get(game, games["default"])
-            + f" Happiness +{happiness_gain}, Energy -{energy_cost}"
-        )
+        return games.get(game, games["default"]) + f" Happiness +{happiness_gain}, Energy -{energy_cost}"
 
     def train(self, trick):
         self._update_stats()
@@ -271,9 +264,7 @@ def main():
         choice = input("Enter your choice (1-8): ")
 
         if choice == "1":
-            food = input(
-                f"What would you like to feed {name}? (leave blank for generic food) "
-            )
+            food = input(f"What would you like to feed {name}? (leave blank for generic food) ")
             print(pet.eat(food))
         elif choice == "2":
             game = input("What game? (fetch/laser/default) ") or "default"
