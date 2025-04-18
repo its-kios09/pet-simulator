@@ -39,10 +39,10 @@ jobs:
         pip install -r requirements.txt
     - name: Run Black
       run: |
-        black --check src/ tests/
+        black --check app/ tests/
     - name: Run Flake8
       run: |
-        flake8 src/ tests/
+        flake8 app/ tests/
 
   release:
     needs: [test, lint]
