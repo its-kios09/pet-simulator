@@ -21,7 +21,7 @@ jobs:
         pip install -r requirements.txt
     - name: Run tests with pytest
       run: |
-        pytest tests/ --cov=src --cov-report=xml
+        pytest app/tests/ --cov=app --cov-report=xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
 
@@ -39,10 +39,10 @@ jobs:
         pip install -r requirements.txt
     - name: Run Black
       run: |
-        black --check app/ tests/
+        black --check app/
     - name: Run Flake8
       run: |
-        flake8 app/ tests/
+        flake8 app/
 
   release:
     needs: [test, lint]
@@ -60,7 +60,7 @@ jobs:
           pip install -r requirements.txt
       - name: Create executable
         run: |
-          pyinstaller --onefile src/pet_simulator.py -n pet_simulator
+          pyinstaller --onefile app/pet_simulator.py -n pet_simulator
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
