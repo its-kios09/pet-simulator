@@ -1,6 +1,7 @@
 import random
 from datetime import datetime
 
+__version__ = "1.0.0"
 
 class Pet:
     def __init__(self, name, species="unknown"):
