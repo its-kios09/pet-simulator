@@ -101,7 +101,7 @@ jobs:
       run: |
         pyinstaller --onefile app/pet_simulator.py -n pet_simulator
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: pet-simulator
         path: dist/pet_simulator
