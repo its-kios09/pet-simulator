@@ -9,7 +9,7 @@ class Pet:
     def eat(self):
         # TODO
         pass
-    
+
     def sleep(self):
         # TODO
         pass

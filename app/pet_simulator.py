@@ -1,5 +1,6 @@
 import random
-from datetime import datetime, timedelta
+from datetime import datetime
+
 
 class Pet:
     def __init__(self, name, species="unknown"):
@@ -23,12 +24,16 @@ class Pet:
 
     def _update_stats(self):
         """Internal method to decay stats over time"""
-        time_passed = random.uniform(0.8, 1.2)  # Random factor to make it less predictable
-        
+        time_passed = random.uniform(
+            0.8, 1.2
+        )  # Random factor to make it less predictable
+
         self.energy = max(0, self.energy - self.energy_decay_rate * time_passed)
-        self.happiness = max(0, self.happiness - self.happiness_decay_rate * time_passed)
+        self.happiness = max(
+            0, self.happiness - self.happiness_decay_rate * time_passed
+        )
         self.hunger = min(10, self.hunger + self.hunger_growth_rate * time_passed)
-        
+
         # Update mood based on stats
         self._update_mood()
 
@@ -49,7 +54,7 @@ class Pet:
 
     def eat(self, food=None):
         self._update_stats()
-        
+
         if food:
             if food in self.favorite_foods:
                 bonus = 2
@@ -69,52 +74,55 @@ class Pet:
         self.energy = min(10, self.energy + 1)
         self.happiness = min(10, self.happiness + 0.5)
         self.last_fed = datetime.now()
-        
+
         return msg + f"Hunger decreased by {hunger_reduction} points."
 
     def sleep(self, duration=1):
         self._update_stats()
-        
+
         energy_gain = duration * 2
         self.energy = min(10, self.energy + energy_gain)
         self.hunger = min(10, self.hunger + duration * 0.5)
         self.happiness = min(10, self.happiness + duration * 0.3)
         self.last_slept = datetime.now()
-        
+
         return f"{self.name} slept for {duration} hours. Gained {energy_gain} energy."
 
     def play(self, game="default"):
         self._update_stats()
-        
+
         if self.energy < 2:
             return f"{self.name} is too tired to play right now."
-        
+
         energy_cost = 2
         happiness_gain = random.randint(1, 3)
-        
+
         self.energy = max(0, self.energy - energy_cost)
         self.happiness = min(10, self.happiness + happiness_gain)
         self.hunger = min(10, self.hunger + 1)
-        
+
         games = {
             "fetch": f"{self.name} happily fetches the ball!",
             "laser": f"{self.name} chases the laser pointer!",
-            "default": f"You play with {self.name}!"
+            "default": f"You play with {self.name}!",
         }
-        
-        return games.get(game, games["default"]) + f" Happiness +{happiness_gain}, Energy -{energy_cost}"
+
+        return (
+            games.get(game, games["default"])
+            + f" Happiness +{happiness_gain}, Energy -{energy_cost}"
+        )
 
     def train(self, trick):
         self._update_stats()
-        
+
         if self.energy < 3:
             return f"{self.name} is too tired to train right now."
         if trick in self.tricks:
             return f"{self.name} already knows '{trick}'!"
-        
+
         difficulty = len(trick.split())  # More words = harder trick
         success_chance = min(0.9, max(0.3, 0.7 - difficulty * 0.1))
-        
+
         if random.random() < success_chance:
             self.tricks.append(trick)
             self.energy -= 3
@@ -127,7 +135,7 @@ class Pet:
 
     def bathe(self):
         self._update_stats()
-        
+
         self.hygiene = 10
         self.happiness = max(0, self.happiness - 1)  # Most pets don't like baths
         return f"{self.name} is now clean but slightly grumpy about it."
@@ -158,7 +166,7 @@ class Pet:
             "",
             f"Tricks known: {len(self.tricks)}",
             f"Favorite foods: {', '.join(self.favorite_foods) if self.favorite_foods else 'None'}",
-            f"Disliked foods: {', '.join(self.disliked_foods) if self.disliked_foods else 'None'}"
+            f"Disliked foods: {', '.join(self.disliked_foods) if self.disliked_foods else 'None'}",
         ]
         return "\n".join(status)
 
@@ -181,18 +189,34 @@ class Pet:
             "hungry": ["Meow?", "Bark!", "Feed me!"],
             "tired": ["Zzz...", "Too sleepy..."],
             "sick": ["Cough...", "Whimper..."],
-            "neutral": ["Hello!", "What's up?"]
+            "neutral": ["Hello!", "What's up?"],
         }
         return random.choice(moods.get(self.mood, ["..."]))
 
     def random_event(self):
         events = [
-            (0.3, lambda: f"{self.name} found a toy! Happiness +1", lambda: setattr(self, 'happiness', min(10, self.happiness + 1))),
-            (0.1, lambda: f"{self.name} had a bad dream. Happiness -1", lambda: setattr(self, 'happiness', max(0, self.happiness - 1))),
-            (0.2, lambda: f"{self.name} is exploring! Energy -1", lambda: setattr(self, 'energy', max(0, self.energy - 1))),
-            (0.05, lambda: f"{self.name} learned something by watching TV! (Random trick)", self._learn_random_trick),
+            (
+                0.3,
+                lambda: f"{self.name} found a toy! Happiness +1",
+                lambda: setattr(self, "happiness", min(10, self.happiness + 1)),
+            ),
+            (
+                0.1,
+                lambda: f"{self.name} had a bad dream. Happiness -1",
+                lambda: setattr(self, "happiness", max(0, self.happiness - 1)),
+            ),
+            (
+                0.2,
+                lambda: f"{self.name} is exploring! Energy -1",
+                lambda: setattr(self, "energy", max(0, self.energy - 1)),
+            ),
+            (
+                0.05,
+                lambda: f"{self.name} learned something by watching TV! (Random trick)",
+                self._learn_random_trick,
+            ),
         ]
-        
+
         for prob, message, action in events:
             if random.random() < prob:
                 action()
@@ -205,13 +229,14 @@ class Pet:
         if new_trick:
             self.tricks.append(new_trick)
 
+
 def main():
     print("🐾 Welcome to the Virtual Pet Simulator! 🐾")
     name = input("What would you like to name your pet? ")
     species = input(f"What species is {name}? (dog/cat/bird/etc) ") or "unknown"
-    
+
     pet = Pet(name, species)
-    
+
     # Add some default preferences based on species
     if species.lower() == "dog":
         pet.add_favorite_food("bone")
@@ -224,12 +249,12 @@ def main():
     elif species.lower() == "bird":
         pet.add_favorite_food("seeds")
         pet.add_disliked_food("avocado")
-    
+
     print(f"\nMeet your new {species}, {name}!")
     print(pet.speak())
-    
+
     while True:
-        print("\n" + "="*40)
+        print("\n" + "=" * 40)
         print(pet.get_status())
         print("\nWhat would you like to do?")
         print("1. Feed your pet")
@@ -240,11 +265,13 @@ def main():
         print("6. Listen to your pet")
         print("7. Wait a while")
         print("8. Quit")
-        
+
         choice = input("Enter your choice (1-8): ")
-        
+
         if choice == "1":
-            food = input(f"What would you like to feed {name}? (leave blank for generic food) ")
+            food = input(
+                f"What would you like to feed {name}? (leave blank for generic food) "
+            )
             print(pet.eat(food))
         elif choice == "2":
             game = input("What game? (fetch/laser/default) ") or "default"
@@ -271,6 +298,7 @@ def main():
             break
         else:
             print("Invalid choice, please try again.")
+
 
 if __name__ == "__main__":
     main()
