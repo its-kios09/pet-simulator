@@ -16,7 +16,7 @@ A delightful Python-based virtual pet simulation game with realistic needs and b
 
 ### 🛠️ Installation
 
-### File structure
+### 📁 File structure
 ``` bash
 pet-simulator/
 ├── app/
