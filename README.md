@@ -2,7 +2,7 @@
 
 ![Python Version](https://img.shields.io/badge/python-3.10+-blue.svg)
 ![CI/CD Status](https://github.com/its-kios09/pet-simulator/actions/workflows/ci-cd.yml/badge.svg)
-![Code Coverage](https://codecov.io/gh/its-kios09/pet-simulator/branch/main/graph/badge.svg)
+[![codecov](https://codecov.io/gh/its-kios09/pet-simulator/branch/main/graph/badge.svg)](https://codecov.io/gh/its-kios09/pet-simulator)
 
 A delightful Python-based virtual pet simulation game with realistic needs and behaviors.
 
