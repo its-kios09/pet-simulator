@@ -16,6 +16,22 @@ A delightful Python-based virtual pet simulation game with realistic needs and b
 
 ### 🛠️ Installation
 
+### File structure
+``` bash
+pet-simulator/
+├── app/
+│   ├── starter-templete.py
+│   └── pet_simulator.py
+├── tests/
+│   ├── __init__.py
+│   └── test_pet.py
+├── requirements.txt
+├── README.md
+└── .github/
+    └── workflows/
+        └── ci-cd.yml
+ ```
+
 ```bash
 # Clone the repository
 git clone https://github.com/its-kios09/pet-simulator.git
