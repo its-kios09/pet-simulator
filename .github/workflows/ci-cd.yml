@@ -89,6 +89,8 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Needed to create tags
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -105,9 +107,26 @@ jobs:
       with:
         name: pet-simulator
         path: dist/pet_simulator
+    - name: Get version from code
+      id: version
+      run: |
+        # Extract version from your Python file
+        VERSION=$(python -c "from app.pet_simulator import __version__; print(__version__)" || echo "0.1.0")
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+    - name: Create Git tag
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}"
+        git push origin "v${{ steps.version.outputs.version }}"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
-      if: success()
       with:
-        files: dist/pet_simulator
+        tag_name: "v${{ steps.version.outputs.version }}"
+        name: "Release v${{ steps.version.outputs.version }}"
+        body: "Automated release of pet simulator"
+        files: |
+          dist/pet_simulator
         generate_release_notes: true
