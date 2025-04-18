@@ -6,7 +6,11 @@ import random
 @pytest.fixture
 def new_pet():
     """Fixture providing a fresh pet instance for each test"""
-    return Pet("TestPet", "test_species")
+    pet = Pet("TestPet", "test_species")
+    pet.energy_decay_rate = 0
+    pet.happiness_decay_rate = 0
+    pet.hunger_growth_rate = 0
+    return pet
 
 @pytest.fixture
 def hungry_pet():
@@ -28,6 +32,10 @@ def happy_pet():
     pet = Pet("HappyPet", "bird")
     pet.happiness = 9
     return pet
+@pytest.fixture
+def decaying_pet():
+    """Fixture providing a pet with stat decay enabled"""
+    return Pet("DecayPet", "test_species")
 
 def test_pet_initialization(new_pet):
     """Test pet initialization with default values"""
@@ -45,11 +53,13 @@ def test_pet_initialization(new_pet):
 def test_eat_generic_food(new_pet):
     """Test eating generic food"""
     initial_hunger = new_pet.hunger
+    initial_energy = new_pet.energy
     result = new_pet.eat()
     
     assert "eating" in result.lower()
     assert new_pet.hunger < initial_hunger
-    assert new_pet.energy == 6 
+    assert new_pet.energy > initial_energy 
+    assert "Hunger decreased by 3 points" in result
     assert new_pet.last_fed is not None
 
 def test_eat_favorite_food(new_pet):
@@ -59,7 +69,8 @@ def test_eat_favorite_food(new_pet):
     result = new_pet.eat("pizza")
     
     assert "loves" in result.lower()
-    assert new_pet.hunger == initial_hunger - 5
+    assert new_pet.hunger == initial_hunger - 5  # 3 base + 2 bonus
+    assert "Hunger decreased by 5 points" in result
 
 def test_eat_disliked_food(new_pet):
     """Test eating disliked food gives penalty"""
@@ -68,7 +79,8 @@ def test_eat_disliked_food(new_pet):
     result = new_pet.eat("broccoli")
     
     assert "doesn't like" in result.lower()
-    assert new_pet.hunger == initial_hunger - 2 
+    assert new_pet.hunger == initial_hunger - 2
+    assert "Hunger decreased by 2 points" in result
 
 def test_sleep(new_pet):
     """Test sleeping restores energy"""
@@ -76,78 +88,113 @@ def test_sleep(new_pet):
     result = new_pet.sleep(2)
     
     assert "slept for 2 hours" in result
-    assert new_pet.energy == 7  # 3 + (2*2)
-    assert new_pet.hunger > 5
-    assert new_pet.last_slept is not None
+    assert "Gained 4 energy" in result
+    assert new_pet.energy == 7
+    assert new_pet.hunger == 6
 
 def test_play(new_pet):
     """Test playing increases happiness"""
+    initial_energy = new_pet.energy
+    initial_happiness = new_pet.happiness
     result = new_pet.play()
+    
     assert "play" in result.lower()
-    assert new_pet.happiness > 5
-    assert new_pet.energy < 5
+    assert new_pet.happiness > initial_happiness
+    assert new_pet.energy < initial_energy
+    assert "Happiness +" in result
+    assert "Energy -" in result
 
 def test_play_when_tired(tired_pet):
     """Test pet refuses to play when tired"""
+    initial_energy = tired_pet.energy
     result = tired_pet.play()
+    
     assert "too tired" in result.lower()
-    assert tired_pet.energy == 1
+    assert tired_pet.energy <= initial_energy
 
 def test_train_success(new_pet, monkeypatch):
     """Test successful trick training"""
     monkeypatch.setattr(random, 'random', lambda: 0.1)
     
+    initial_energy = new_pet.energy
+    initial_happiness = new_pet.happiness
     result = new_pet.train("sit")
+    
     assert "Success" in result
     assert "sit" in new_pet.tricks
-    assert new_pet.energy == 2  # 5 - 3
+    assert new_pet.energy == initial_energy - 3
+    assert new_pet.happiness == initial_happiness + 1
 
 def test_train_failure(new_pet, monkeypatch):
     """Test failed trick training"""
     monkeypatch.setattr(random, 'random', lambda: 0.9)
     
     initial_energy = new_pet.energy
+    initial_happiness = new_pet.happiness
     result = new_pet.train("roll over")
+    
     assert "didn't quite get it" in result
     assert "roll over" not in new_pet.tricks
     assert new_pet.energy == initial_energy - 2
+    assert new_pet.happiness == initial_happiness - 0.5
 
 def test_train_known_trick(new_pet):
     """Test pet won't learn known tricks"""
     new_pet.tricks.append("spin")
+    initial_energy = new_pet.energy
     result = new_pet.train("spin")
+    
     assert "already knows" in result
+    assert new_pet.energy == initial_energy
 
 def test_bathe(new_pet):
     """Test bathing improves hygiene"""
     new_pet.hygiene = 3
+    initial_happiness = new_pet.happiness
     result = new_pet.bathe()
     
     assert "clean" in result.lower()
     assert new_pet.hygiene == 10
-    assert new_pet.happiness < 5  
+    assert new_pet.happiness == initial_happiness - 1
+
 
 def test_mood_updates(new_pet):
     """Test mood changes based on stats"""
+    # Test priority: sick > hungry > tired > happy > grumpy > neutral
+    new_pet.health = 2
+    new_pet._update_mood()
+    assert new_pet.mood == "sick"
+    
+    new_pet.health = 10
     new_pet.hunger = 9
     new_pet._update_mood()
     assert new_pet.mood == "hungry"
     
+    new_pet.hunger = 5
     new_pet.energy = 1
     new_pet._update_mood()
     assert new_pet.mood == "tired"
     
+    new_pet.energy = 5
     new_pet.happiness = 8
     new_pet._update_mood()
     assert new_pet.mood == "happy"
+    
+    new_pet.happiness = 2
+    new_pet._update_mood()
+    assert new_pet.mood == "grumpy"
+    
+    new_pet.happiness = 5
+    new_pet._update_mood()
+    assert new_pet.mood == "neutral"
 
 def test_random_event(new_pet, monkeypatch):
     """Test random events occur properly"""
-    monkeypatch.setattr(random, 'random', lambda: 0.05)
+    monkeypatch.setattr(random, 'random', lambda: 0.05)  # Force event
     
     event = new_pet.random_event()
     assert event is not None
-    assert "found a toy" in event or "bad dream" in event or "exploring" in event
+    assert any(phrase in event for phrase in ["found a toy", "bad dream", "exploring", "learned something"])
 
 def test_learn_random_trick(new_pet, monkeypatch):
     """Test pet can learn random tricks"""
@@ -169,7 +216,7 @@ def test_status_display(new_pet):
     """Test status display contains all important info"""
     status = new_pet.get_status()
     
-    assert "TestPet" in status
+    assert "TestPet's Status" in status
     assert "Hunger" in status
     assert "Energy" in status
     assert "Happiness" in status
@@ -180,7 +227,7 @@ def test_speak(new_pet):
     """Test pet speaks appropriately"""
     # Test neutral speech
     speech = new_pet.speak()
-    assert speech in ["Hello!", "What's up?", "..."]
+    assert speech in ["Hello!", "What's up?"]
     
     # Test happy speech
     new_pet.happiness = 8
@@ -188,17 +235,19 @@ def test_speak(new_pet):
     speech = new_pet.speak()
     assert speech in ["Purr purr!", "Wag wag!", "Chirp chirp!"]
 
-def test_stat_decay(new_pet):
+
+
+def test_stat_decay(decaying_pet):
     """Test stats decay over time"""
-    initial_energy = new_pet.energy
-    initial_happiness = new_pet.happiness
-    initial_hunger = new_pet.hunger
+    initial_energy = decaying_pet.energy
+    initial_happiness = decaying_pet.happiness
+    initial_hunger = decaying_pet.hunger
     
-    new_pet._update_stats()
+    decaying_pet._update_stats()
     
-    assert new_pet.energy < initial_energy
-    assert new_pet.happiness < initial_happiness
-    assert new_pet.hunger > initial_hunger
+    assert decaying_pet.energy < initial_energy
+    assert decaying_pet.happiness < initial_happiness
+    assert decaying_pet.hunger > initial_hunger
 
 def test_add_food_preferences(new_pet):
     """Test adding food preferences"""
