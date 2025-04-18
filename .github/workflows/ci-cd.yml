@@ -9,12 +9,16 @@ on:
 env:
   PYTHON_VERSION: '3.10'
   MAX_LINE_LENGTH: 200
+  REPO_URL: https://github.com/its-kios09/pet-simulator.git
 
 jobs:
   format:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN || secrets.GH_PAT }}
+        fetch-depth: 0
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -28,14 +32,20 @@ jobs:
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         git add .
-        git diff --quiet && git diff --staged --quiet || git commit -m "Format code with Black"
-        git push https://${{ secrets.GH_PAT }}@github.com/its-kios09/pet-simulator.git main
+        if ! git diff --quiet || ! git diff --cached --quiet; then
+          git commit -m "Format code with Black"
+          git push
+        else
+          echo "No changes to commit"
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN || secrets.GH_PAT }}
 
   test:
     needs: format
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -59,7 +69,7 @@ jobs:
     needs: format
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -78,20 +88,26 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt pyinstaller
-      - name: Create executable
-        run: |
-          pyinstaller --onefile app/pet_simulator.py -n pet_simulator
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: pet-simulator
-          path: dist/pet_simulator
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt pyinstaller
+    - name: Create executable
+      run: |
+        pyinstaller --onefile app/pet_simulator.py -n pet_simulator
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: pet-simulator
+        path: dist/pet_simulator
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      if: success()
+      with:
+        files: dist/pet_simulator
+        generate_release_notes: true
