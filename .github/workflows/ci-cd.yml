@@ -43,7 +43,7 @@ jobs:
     - name: Run Black formatting
       run: black app/ --line-length ${{ env.MAX_LINE_LENGTH }}
       
-    - name: Commit formatted changes
+    - name: Commit and push formatted changes
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
@@ -52,17 +52,16 @@ jobs:
         if ! git diff --quiet || ! git diff --cached --quiet; then
           git commit -m "Format code with Black"
           git push origin black-formatting-${{ github.run_id }}
-          gh pr create \
-            --title "Black code formatting updates" \
-            --body "Automated code formatting with Black" \
-            --base main \
-            --head black-formatting-${{ github.run_id }}
+          echo "Formatted changes pushed to branch black-formatting-${{ github.run_id }}"
+          echo "Create a PR manually at:"
+          echo "https://github.com/its-kios09/pet-simulator/compare/main...black-formatting-${{ github.run_id }}?expand=1"
         else
           echo "No changes to commit"
         fi
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  # Rest of your jobs (test, lint, release) remain unchanged
   test:
     needs: format
     runs-on: ubuntu-latest
