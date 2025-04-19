@@ -113,44 +113,71 @@ jobs:
     permissions:
       contents: write
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt pyinstaller
-    - name: Create executable
-      run: |
-        pyinstaller --onefile app/pet_simulator.py -n pet_simulator
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: pet-simulator
-        path: dist/pet_simulator
-    - name: Get version from code
-      id: version
-      run: |
-        VERSION=$(python -c "from app.pet_simulator import __version__; print(__version__)" 2>/dev/null || echo "0.1.0")
-        echo "version=${VERSION}" >> $GITHUB_OUTPUT
-    - name: Create and push tag
-      run: |
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
-        git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}"
-        git push origin "v${{ steps.version.outputs.version }}"
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: "v${{ steps.version.outputs.version }}"
-        name: "Release v${{ steps.version.outputs.version }}"
-        body: "Automated release of pet simulator"
-        files: dist/pet_simulator
-        generate_release_notes: true
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+      
+      - name: Create executable
+        run: |
+          pyinstaller --onefile app/pet_simulator.py -n pet_simulator
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pet-simulator
+          path: dist/pet_simulator
+      
+      - name: Get and increment version
+        id: version
+        run: |
+          # Get base version from code
+          BASE_VERSION=$(python -c "from app.pet_simulator import __version__; print(__version__)" 2>/dev/null || echo "0.1.0")
+          
+          # Get all existing tags
+          git fetch --tags
+          EXISTING_TAGS=$(git tag -l "v$BASE_VERSION*" | sort -V)
+          
+          # Find highest patch version
+          HIGHEST_PATCH=0
+          for tag in $EXISTING_TAGS; do
+            if [[ $tag =~ ^v${BASE_VERSION}\.([0-9]+)$ ]]; then
+              PATCH=${BASH_REMATCH[1]}
+              if (( PATCH > HIGHEST_PATCH )); then
+                HIGHEST_PATCH=$PATCH
+              fi
+            fi
+          done
+          
+          # Increment patch version
+          NEW_VERSION="$BASE_VERSION.$((HIGHEST_PATCH + 1))"
+          echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "Using version: ${NEW_VERSION}"
+      
+      - name: Create and push tag
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}"
+          git push origin "v${{ steps.version.outputs.version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: "v${{ steps.version.outputs.version }}"
+          name: "Release v${{ steps.version.outputs.version }}"
+          body: "Automated release of pet simulator"
+          files: dist/pet_simulator
+          generate_release_notes: true
